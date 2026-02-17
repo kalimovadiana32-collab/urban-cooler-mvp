@@ -131,4 +131,5 @@ if uploaded_file:
             "Прогноз": [f"{pred_t:.1f}", "—", "—"]
         })
         st.table(report_df)
-        csv = report_df.to_csv(index=False).encode('utf-8-sig
+        csv = report_df.to_csv(index=False).encode('utf-8-sig')
+        st.download_button("📥 Скачать экспертный отчет", data=csv, file_name='thermal_report.csv')
