@@ -1,3 +1,7 @@
+import streamlit as st
+import cv2
+import numpy as np
+from PIL import Image
 st.title("🛰️ THERMAL VISION SYSTEM v2.0")
 st.markdown("---")
 
@@ -22,10 +26,6 @@ with st.expander("📖 ИНСТРУКЦИЯ И ТРЕБОВАНИЯ К СНИМ�
 # --- КОНЕЦ БЛОКА ИНСТРУКЦИИ ---
 
 # Дальше идет остальной код (sidebar и так далее)
-import streamlit as st
-import cv2
-import numpy as np
-from PIL import Image
 
 # Функция обработки остается твоей базой, но с улучшенным рендерингом
 def process_thermal(img, ambient_temp):
