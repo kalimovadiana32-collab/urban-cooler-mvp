@@ -56,14 +56,21 @@ def process_thermal(img, ambient_temp, climate_type):
 # --- 3. ИНТЕРФЕЙС URBAN COOLER ---
 st.set_page_config(page_title="URBAN COOLER", layout="wide")
 
+# --- СТИЛИЗАЦИЯ URBAN COOLER (ЭКО-ТЕМНО-СИНИЙ ГОРОД) ---
 st.markdown("""
     <style>
-    .main { background-color: #f4f7f4; }
-    .eco-label { font-size: 14px; color: #2e7d32; font-weight: bold; }
+    .stApp {
+        background-image: linear-gradient(rgba(244, 247, 244, 0.9), rgba(244, 247, 244, 0.9)), 
+        url("https://img.freepik.com/free-vector/city-skyline-silhouette-background_23-2148298752.jpg");
+        background-size: cover;
+        background-attachment: fixed;
+    }
+    .stButton>button { background-color: #2e7d32; color: white; border-radius: 10px; }
     .stProgress > div > div > div > div { background-color: #2e7d32; }
+    /* Делаем таблицы и блоки чуть прозрачными для стиля */
+    .stTable, .css-1r6p8d1 { background-color: rgba(255, 255, 255, 0.8); border-radius: 10px; }
     </style>
     """, unsafe_allow_html=True)
-
 st.title("🏙️ URBAN COOLER")
 st.markdown("##### *Система мониторинга и снижения теплового стресса городов*")
 
