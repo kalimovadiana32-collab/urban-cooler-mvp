@@ -97,11 +97,12 @@ if uploaded_file:
     df = pd.DataFrame(report_data)
     st.table(df)
 
-    # Кнопка скачивания CSV-отчета
-    csv = df.to_csv(index=False).encode('utf-8')
+   # Кнопка скачивания CSV-отчета с фиксом для Excel (добавляем кодировку UTF-8-SIG)
+    csv = df.to_csv(index=False).encode('utf-8-sig') # Добавили -sig
+    
     st.download_button(
-        label="📥 Скачать полный отчет (CSV)",
+        label="📥 Скачать полный отчет (Excel/CSV)",
         data=csv,
         file_name='thermal_report.csv',
         mime='text/csv',
-    )
+    ) 
