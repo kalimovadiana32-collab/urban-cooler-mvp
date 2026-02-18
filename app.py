@@ -20,7 +20,6 @@ def process_thermal(img, ambient_temp, climate_type):
     hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-    # Параметры теплового отклика
     offsets = {
         "Умеренный": {"heat": 12.0, "warm": 4.0, "cool": -6.0, "danger": 30.0},
         "Тропики": {"heat": 15.0, "warm": 6.0, "cool": -3.0, "danger": 38.0},
@@ -29,15 +28,14 @@ def process_thermal(img, ambient_temp, climate_type):
     }
     conf = offsets[climate_type]
 
-    # Маскирование
     mask_cool = cv2.bitwise_or(cv2.inRange(hsv, np.array([35, 20, 20]), np.array([90, 255, 255])), cv2.inRange(gray, 0, 75))
     mask_heat = cv2.bitwise_and(cv2.inRange(gray, 100, 185), cv2.bitwise_not(mask_cool))
     mask_warm = cv2.bitwise_and(cv2.inRange(gray, 186, 255), cv2.bitwise_not(mask_cool))
 
     overlay = img_bgr.copy()
-    overlay[mask_cool > 0] = [240, 80, 0]   # Синий (Природа)
-    overlay[mask_warm > 0] = [0, 140, 255]  # Оранжевый (Здания)
-    overlay[mask_heat > 0] = [10, 10, 230]  # Красный (Асфальт)
+    overlay[mask_cool > 0] = [240, 80, 0]   
+    overlay[mask_warm > 0] = [0, 140, 255]  
+    overlay[mask_heat > 0] = [10, 10, 230]  
     
     res = cv2.addWeighted(img_bgr, 0.4, overlay, 0.6, 0)
     total_px = max(1, img_arr.shape[0] * img_arr.shape[1])
@@ -52,7 +50,7 @@ def process_thermal(img, ambient_temp, climate_type):
         "avg_t": avg_t, "danger_limit": conf["danger"]
     }
 
-# --- 2. ИНТЕРФЕЙС URBAN COOLER ---
+# --- 2. ИНТЕРФЕЙС ---
 st.set_page_config(page_title="URBAN COOLER", layout="wide")
 
 st.markdown("""
@@ -72,17 +70,14 @@ st.markdown("""
 
 st.title("🏙️ URBAN COOLER")
 
-# РАСШИРЕННАЯ ИНСТРУКЦИЯ
 with st.expander("📖 РАСШИРЕННЫЙ ПРОТОКОЛ АНАЛИЗА (ИНСТРУКЦИЯ)"):
     st.markdown("""
-    **1. Подготовка снимка:** Откройте [Google Maps](http://maps.google.com) (Спутник). 
-    Нажмите **'U'** для строго вертикального вида. Масштаб: **20-50м**.
-    **2. Параметры:** Укажите климат и текущую T воздуха (оптимально 20-25°C).
-    **3. Анализ:** Выделите рамкой участок. ИИ определит % асфальта, зданий и зелени.
-    **4. Модернизация:** Используйте слайдеры, чтобы снизить T до безопасного уровня.
+    **1. Подготовка снимка:** Откройте карту (Спутник). Включите **2D вид** (клавиша 'U'). Масштаб: **20-50м**.
+    **2. Параметры:** Укажите климат и текущую T воздуха (норма для города: 18-23°C).
+    **3. Анализ:** Выделите рамкой участок. ИИ рассчитает % асфальта, зданий и растительности.
+    **4. Модернизация:** Используйте слайдеры для симуляции охлаждения.
     """)
 
-# ПАРАМЕТРЫ
 st.markdown("### ⚙️ Ввод данных")
 c1, c2, c3 = st.columns([1, 1, 1])
 with c1: climate = st.selectbox("Климатическая зона", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
@@ -99,27 +94,23 @@ if uploaded_file:
     if cropped_img:
         processed_img, stats = process_thermal(cropped_img, t_air, climate)
         
-        # СТАТУС (ЛОГИКА ВЫДЕЛЕННОЙ ЗОНЫ)
         if stats['avg_t'] > stats['danger_limit']:
-            st.markdown(f'<div class="danger-alert">⚠️ ВНИМАНИЕ: ОБНАРУЖЕН ТЕПЛОВОЙ ОСТРОВ ({stats["avg_t"]:.1f}°C)</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="danger-alert">⚠️ ОБНАРУЖЕН ТЕПЛОВОЙ ОСТРОВ ({stats["avg_t"]:.1f}°C)</div>', unsafe_allow_html=True)
         else:
             st.markdown(f'<div class="safe-alert">✅ ТЕМПЕРАТУРНЫЙ ФОН В НОРМЕ ({stats["avg_t"]:.1f}°C)</div>', unsafe_allow_html=True)
 
-        # МЕТРИКИ
         st.write("")
         col_metrics = st.columns(3)
         col_metrics[0].metric("🔥 Асфальт", f"{stats['road']['t']:.1f}°C", f"{stats['road']['p']:.1f}%")
         col_metrics[1].metric("🏠 Здания", f"{stats['build']['t']:.1f}°C", f"{stats['build']['p']:.1f}%")
         col_metrics[2].metric("🌳 Природа", f"{stats['eco']['t']:.1f}°C", f"{stats['eco']['p']:.1f}%")
 
-        # КОМПАКТНЫЕ КАРТИНКИ
         ci1, ci2 = st.columns(2)
         with ci1: st.image(cropped_img, caption="Зум-оригинал", use_container_width=True)
         with ci2: st.image(processed_img, caption="Теплосканер", use_container_width=True)
 
-        # СИМУЛЯТОР
         st.markdown("---")
-        st.subheader("🧪 Симулятор модернизации инфраструктуры")
+        st.subheader("🧪 Симулятор модернизации")
         sc1, sc2 = st.columns(2)
         with sc1:
             trees = st.slider("🌳 Озеленение участка (%)", 0, 100, 0)
@@ -131,7 +122,6 @@ if uploaded_file:
         reduction = (trees * 0.1) + (pavement * 0.05) + (water * 0.04) + (white_arch * 0.06)
         res_t = stats['avg_t'] - reduction
 
-        # ГРАДУСНИК
         t_col1, t_col2 = st.columns([1, 4])
         with t_col1:
             fill = min(100, max(10, (res_t / 60) * 100))
@@ -141,13 +131,12 @@ if uploaded_file:
         with t_col2:
             st.write(f"**Прогноз охлаждения:** -{reduction:.1f}°C")
             st.progress(min(1.0, reduction/15))
-            if res_t <= stats['danger_limit']: st.balloons()
+            if res_t <= stats['danger_limit']: st.success("Цель по охлаждению достигнута.")
 
-        # ПОЛНЫЙ ОТЧЕТ
-        st.markdown("### 📝 Итоговый технический отчет")
+        st.markdown("### 📝 Итоговый отчет")
         report_df = pd.DataFrame({
             "Параметр": ["Тип климата", "Общая T зоны", "Прогнозная T", "Эффективность"],
             "Значение": [climate, f"{stats['avg_t']:.1f}°C", f"{res_t:.1f}°C", f"{int((reduction/15)*100)}%"]
         })
         st.table(report_df)
-        st.download_button("📥 Сохранить отчет .csv", data=report_df.to_csv(index=False).encode('utf-8-sig'), file_name='urban_cooler_report.csv')
+        st.download_button("📥 Сохранить .csv", data=report_df.to_csv(index=False).encode('utf-8-sig'), file_name='urban_report.csv')
