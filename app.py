@@ -23,7 +23,7 @@ def process_thermal(img, ambient_temp, climate_type):
     hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
 
     offsets = {
-        "Умеренный": {"heat": 8.0, "warm": 2.0, "cool": -10.0, "danger": 35.0},
+        "Умеренный": {"heat": 8.0, "warm": 2.0, "cool": -10.0, "danger": 32.0},
         "Тропики": {"heat": 10.0, "warm": 4.0, "cool": -4.0, "danger": 38.0},
         "Пустыня": {"heat": 18.0, "warm": 7.0, "cool": -3.0, "danger": 48.0},
         "Арктика / Зима": {"heat": 4.0, "warm": 15.0, "cool": -5.0, "danger": 10.0}
@@ -67,54 +67,80 @@ st.markdown("""
     }
     h1, h2, h3, h4, h5, p, span, label { color: white !important; }
     
-    /* Стили градусника */
+    /* Анимация пульсации для таблички опасности */
+    @keyframes pulse-red {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(255, 75, 75, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
+    }
+    .danger-alert {
+        background: rgba(255, 75, 75, 0.2);
+        border: 2px solid #ff4b4b;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        animation: pulse-red 2s infinite;
+        margin: 20px 0;
+    }
+    
+    /* Градусник */
     .thermo-container {
-        width: 100px; height: 300px;
+        width: 80px; height: 250px;
         background: rgba(255,255,255,0.1);
-        border: 4px solid #fff;
-        border-radius: 50px 50px 10px 10px;
-        position: relative; margin: 20px auto;
+        border: 3px solid #fff;
+        border-radius: 40px;
+        position: relative; margin: 10px auto;
         overflow: hidden;
     }
-    .thermo-fill {
-        position: absolute; bottom: 0; width: 100%;
-        transition: all 0.5s ease-in-out;
-    }
-    .thermo-bulb {
-        width: 60px; height: 60px;
-        background: inherit; border: 4px solid #fff;
-        border-radius: 50%; margin: -30px auto 0;
-    }
+    .thermo-fill { position: absolute; bottom: 0; width: 100%; transition: all 0.5s ease; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🏙️ URBAN COOLER")
 
-# --- ГЛАВНЫЕ НАСТРОЙКИ ---
-st.markdown("### 🛠 Параметры системы")
-c1, c2, c3 = st.columns([1, 1, 2])
-with c1:
-    climate = st.selectbox("Климатическая зона", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
-with c2:
-    t_air = st.number_input("Температура воздуха (°C)", -30, 55, 25)
-with c3:
-    uploaded_file = st.file_uploader("📥 Загрузите скриншот карты", type=['jpg', 'png', 'jpeg'])
+# --- ОБШИРНАЯ ИНСТРУКЦИЯ ---
+with st.expander("📖 РАСШИРЕННАЯ ИНСТРУКЦИЯ И ПОДГОТОВКА ДАННЫХ"):
+    st.markdown("""
+    ### 🛠 Как получить точный результат:
+    1. **Выбор источника:** Используйте [Google Maps](http://googleusercontent.com/maps.google.com/3) или [Yandex Maps](https://yandex.ru/maps). Переключитесь в режим **Спутник**.
+    2. **Масштаб:** Оптимально — **20-50 метров**. Если масштаб больше, ИИ может пропустить мелкие тепловые объекты.
+    3. **Ракурс:** Нажмите клавишу **'U'** (в Google) или убедитесь, что вид строго вертикальный (2D). Это исключит искажение площади зданий.
+    4. **Время снимка:** Старайтесь выбирать снимки, сделанные в летнее время (по состоянию растительности), чтобы ИИ корректно определил зоны перегрева.
+    5. **Загрузка:** Сделайте скриншот области, где есть и асфальт, и зелень — это даст лучший сравнительный анализ.
+    """)
 
-with st.expander("📖 ИНСТРУКЦИЯ"):
-    st.markdown("Спутник • Масштаб 20-50м • Клавиша 'U' • [Google](http://maps.google.com) | [Yandex](https://yandex.ru/maps)")
+# --- НАСТРОЙКИ ---
+st.markdown("### ⚙️ Ввод данных")
+c1, c2, c3 = st.columns([1, 1, 2])
+with c1: climate = st.selectbox("Регион", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
+with c2: t_air = st.number_input("Температура воздуха (°C)", -30, 55, 25)
+with c3: uploaded_file = st.file_uploader("📥 Загрузите изображение", type=['jpg', 'png', 'jpeg'])
 
 if uploaded_file:
-    with st.status("🛠 Оптимизация качества...", expanded=False):
+    with st.status("🛠 ИИ: Авто-улучшение качества...", expanded=False):
         img_raw = auto_enhance_image(Image.open(uploaded_file))
         time.sleep(0.5)
 
-    st.subheader("🎯 Зона анализа")
+    st.subheader("🎯 Выделите зону теплового анализа")
     cropped_img = st_cropper(img_raw, realtime_update=True, box_color='#00ff88', aspect_ratio=None)
     
     if cropped_img:
         processed_img, metrics = process_thermal(cropped_img, t_air, climate)
         road_t = metrics['heat'][1]
+        danger_t = metrics['danger_limit']
         
+        # --- ТАБЛИЧКА ОПАСНОСТИ (ПУЛЬСИРУЮЩАЯ) ---
+        if road_t > danger_t:
+            st.markdown(f"""
+                <div class="danger-alert">
+                    <h2 style="margin:0;">⚠️ ОБНАРУЖЕН ТЕПЛОВОЙ ОСТРОВ</h2>
+                    <p style="margin:5px 0 0 0;">Критический перегрев поверхностей: <b>{road_t:.1f}°C</b>. <br> 
+                    Требуется немедленное внедрение систем охлаждения.</p>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.success("✅ Температурная обстановка в пределах нормы.")
+
         st.markdown("---")
         m1, m2, m3 = st.columns(3)
         m1.metric("🔥 Поверхность", f"{road_t:.1f} °C")
@@ -122,54 +148,50 @@ if uploaded_file:
         m3.metric("🌳 Природа", f"{metrics['cool'][0]:.1f}%")
 
         c_img1, c_img2 = st.columns(2)
-        with c_img1: st.image(cropped_img, use_container_width=True)
-        with c_img2: st.image(processed_img, use_container_width=True)
+        with c_img1: st.image(cropped_img, caption="Улучшенный оригинал", use_container_width=True)
+        with c_img2: st.image(processed_img, caption="Тепловой сканер ИИ", use_container_width=True)
 
         st.markdown("---")
         st.subheader("🧪 Симулятор охлаждения")
         s_col1, s_col2 = st.columns(2)
         with s_col1:
-            trees = st.slider("🌳 Озеленение (%)", 0, 100, 0)
-            pavement = st.slider("🚜 Светлое покрытие (%)", 0, 100, 0)
+            trees = st.slider("🌳 Создание парковых зон (%)", 0, 100, 0)
+            pavement = st.slider("🚜 Отражающее покрытие дорог (%)", 0, 100, 0)
         with s_col2:
-            water = st.slider("⛲ Водное охлаждение (%)", 0, 100, 0)
-            white_arch = st.slider("🏙️ Отражающие фасады (%)", 0, 100, 0)
+            water = st.slider("⛲ Установка фонтанов/водных зон (%)", 0, 100, 0)
+            white_arch = st.slider("🏙️ Светлые фасады и крыши (%)", 0, 100, 0)
 
         reduction = (trees * 0.08) + (pavement * 0.05) + (water * 0.04) + (white_arch * 0.06)
         res_t = road_t - reduction
 
-        # --- ВИЗУАЛЬНЫЙ ГРАДУСНИК ---
-        st.markdown("### 🌡️ СОСТОЯНИЕ УЧАСТКА")
+        # --- ГРАДУСНИК И ИТОГ ---
+        st.markdown("### 🌡️ МОНИТОРИНГ ИЗМЕНЕНИЙ")
         
-        # Расчет высоты и цвета (от 0 до 60 градусов для наглядности)
         fill_height = min(100, max(10, (res_t / 60) * 100))
-        color = "#ff4b4b" if res_t > metrics['danger_limit'] else "#00ff88"
+        color = "#ff4b4b" if res_t > danger_t else "#00ff88"
         
-        t_col1, t_col2 = st.columns([1, 3])
+        t_col1, t_col2 = st.columns([1, 4])
         with t_col1:
             st.markdown(f"""
                 <div class="thermo-container">
                     <div class="thermo-fill" style="height: {fill_height}%; background: {color};"></div>
                 </div>
-                <p style="text-align:center; font-weight:bold;">{res_t:.1f}°C</p>
+                <p style="text-align:center;"><b>{res_t:.1f}°C</b></p>
             """, unsafe_allow_html=True)
             
         with t_col2:
-            st.write("")
-            st.write("")
-            if res_t > metrics['danger_limit']:
-                st.error(f"🚨 КРИТИЧЕСКИЙ ЖАР! Температура выше нормы.")
+            st.write(f"**Эффективность охлаждения:** {int((reduction/10)*100)}%")
+            st.progress(min(1.0, reduction/10))
+            if res_t <= danger_t:
+                st.balloons()
+                st.success(f"🎊 Цель достигнута! Участок охлажден до безопасных {res_t:.1f}°C.")
             else:
-                st.success(f"✅ ЭКО-КОМФОРТ. Цель достигнута.")
-            
-            progress = min(1.0, max(0.0, reduction / 10))
-            st.write(f"**Эффективность охлаждения:** {int(progress*100)}%")
-            st.progress(progress)
+                st.warning(f"Уровень нагрева снижен, но зона всё еще требует внимания.")
 
+        # ОТЧЕТ
         st.markdown("### 📝 Итоговый отчет")
         report_df = pd.DataFrame({
-            "Параметр": ["Проект", "Зона", "Старт Т", "Итог Т", "Эффективность"],
-            "Данные": ["URBAN COOLER", climate, f"{road_t:.1f}°C", f"{res_t:.1f}°C", f"{int(progress*100)}%"]
+            "Показатель": ["Проект", "Регион", "Базовая Т", "Прогноз Т", "Статус"],
+            "Данные": ["URBAN COOLER", climate, f"{road_t:.1f}°C", f"{res_t:.1f}°C", "Безопасно" if res_t <= danger_t else "Риск"]
         })
         st.table(report_df)
-        st.download_button("📥 Скачать .csv", data=report_df.to_csv(index=False).encode('utf-8-sig'), file_name='urban_cooler.csv')
