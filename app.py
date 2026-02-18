@@ -55,69 +55,44 @@ st.set_page_config(page_title="URBAN COOLER", layout="wide")
 
 st.markdown("""
     <style>
-    /* Глобальные стили для мобильных устройств */
     .stApp {
         background-image: linear-gradient(rgba(10, 20, 30, 0.95), rgba(10, 20, 30, 0.95)), 
         url("https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80");
         background-size: cover; background-attachment: fixed; color: white;
     }
-    
-    /* Адаптивные контейнеры инструкции */
-    .step-box {
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 12px;
-        margin-bottom: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        min-height: 100px;
-    }
-    .step-num { font-size: 18px; font-weight: bold; color: #00ff88; }
-    .step-text { font-size: 12px; line-height: 1.3; }
+    .step-box { background: rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 5px; }
+    .step-num { font-size: 16px; font-weight: bold; color: #00ff88; }
+    .step-text { font-size: 11px; }
     .step-link { color: #00ff88 !important; text-decoration: underline; }
     
-    /* Улучшение читаемости на малых экранах */
-    @media (max-width: 640px) {
-        .stMetric { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; }
-        h1 { font-size: 24px !important; }
-    }
+    .danger-alert { background: rgba(255, 75, 75, 0.3); border: 1px solid #ff4b4b; border-radius: 10px; padding: 10px; text-align: center; }
+    .safe-alert { background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; border-radius: 10px; padding: 10px; text-align: center; }
     
-    .danger-alert { background: rgba(255, 75, 75, 0.3); border: 1px solid #ff4b4b; border-radius: 10px; padding: 12px; text-align: center; }
-    .safe-alert { background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; border-radius: 10px; padding: 12px; text-align: center; }
-    
-    .thermo-container { width: 40px; height: 150px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 20px; position: relative; margin: 0 auto; overflow: hidden; }
+    .thermo-container { width: 35px; height: 130px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 20px; position: relative; margin: 0 auto; overflow: hidden; }
     .thermo-fill { position: absolute; bottom: 0; width: 100%; transition: all 0.5s ease; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🏙️ URBAN COOLER")
 
-# --- МОБИЛЬНАЯ ИНСТРУКЦИЯ ---
+# ГОР. ИНСТРУКЦИЯ (Компактно для мобилок)
 st.markdown("##### 📋 Быстрый старт")
-inst_cols = st.columns([1,1,1,1]) # На ПК в ряд, на мобилках Streamlit их сам перестроит
+i1, i2, i3, i4 = st.columns(4)
+with i1: st.markdown('<div class="step-box"><span class="step-num">1</span> <a class="step-link" href="https://www.google.com/maps" target="_blank">Google</a></div>', unsafe_allow_html=True)
+with i2: st.markdown('<div class="step-box"><span class="step-num">2</span> 2D/50м</div>', unsafe_allow_html=True)
+with i3: st.markdown('<div class="step-box"><span class="step-num">3</span> Upload</div>', unsafe_allow_html=True)
+with i4: st.markdown('<div class="step-box"><span class="step-num">4</span> Cool IT</div>', unsafe_allow_html=True)
 
-with inst_cols[0]:
-    st.markdown('<div class="step-box"><span class="step-num">1.</span><br><span class="step-text">Спутник в <a class="step-link" href="https://www.google.com/maps" target="_blank">Google</a> или <a class="step-link" href="https://yandex.ru/maps" target="_blank">Yandex</a>.</span></div>', unsafe_allow_html=True)
-with inst_cols[1]:
-    st.markdown('<div class="step-box"><span class="step-num">2.</span><br><span class="step-text">Вид 2D (клавиша <b>U</b>). Масштаб 20-50м. Скриншот.</span></div>', unsafe_allow_html=True)
-with inst_cols[2]:
-    st.markdown('<div class="step-box"><span class="step-num">3.</span><br><span class="step-text">Загрузите фото и <b>выделите зону</b> для анализа.</span></div>', unsafe_allow_html=True)
-with inst_cols[3]:
-    st.markdown('<div class="step-box"><span class="step-num">4.</span><br><span class="step-text">Используйте <b>слайдеры</b> для симуляции охлаждения.</span></div>', unsafe_allow_html=True)
-
-# --- НАСТРОЙКИ ---
+# НАСТРОЙКИ
 st.write("")
-cfg_cols = st.columns([1,1]) # На мобильном будут 1x1
-with cfg_cols[0]:
-    climate = st.selectbox("Климат", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
-    t_air = st.number_input("T воздуха (°C)", -30, 55, 25)
-with cfg_cols[1]:
-    uploaded_file = st.file_uploader("📥 Снимок карты", type=['jpg', 'png', 'jpeg'])
+cfg_cols = st.columns(2)
+with cfg_cols[0]: climate = st.selectbox("Климат", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
+with cfg_cols[1]: t_air = st.number_input("T воздуха (°C)", value=25)
+uploaded_file = st.file_uploader("📥 Выберите скриншот", type=['jpg', 'png', 'jpeg'])
 
 if uploaded_file:
     img_raw = auto_enhance_image(Image.open(uploaded_file))
-    
-    st.subheader("🎯 Выделение зоны")
-    # Кроппер автоматически подстраивается под ширину контейнера
+    st.subheader("🎯 Кроп-анализ")
     cropped_img = st_cropper(img_raw, realtime_update=True, box_color='#00ff88', aspect_ratio=None)
     
     if cropped_img:
@@ -125,16 +100,48 @@ if uploaded_file:
         
         # СТАТУС
         if stats['avg_t'] > stats['danger_limit']:
-            st.markdown(f'<div class="danger-alert">⚠️ ТЕПЛОВОЙ ОСТРОВ: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="danger-alert">⚠️ ГОРЯЧО: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="safe-alert">✅ КОМФОРТНАЯ ЗОНА: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="safe-alert">✅ НОРМА: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
 
-        # МЕТРИКИ (Горизонтально на ПК, вертикально на мобилках)
+        # СРАВНЕНИЕ КАРТИНОК (ДО И ПОСЛЕ)
         st.write("")
-        m_cols = st.columns(3)
-        m_cols[0].metric("🔥 Асфальт", f"{stats['road']['t']:.1f}°C")
-        m_cols[1].metric("🏠 Здания", f"{stats['build']['t']:.1f}°C")
-        m_cols[2].metric("🌳 Природа", f"{stats['eco']['p']:.0f}%")
+        img_col1, img_col2 = st.columns(2)
+        with img_col1: st.image(cropped_img, caption="До", use_container_width=True)
+        with img_col2: st.image(processed_img, caption="После", use_container_width=True)
 
-        # ИЗОБРАЖЕНИЯ
-        st.image(processed_img, caption="Тепловизор ИИ", use_container_width=True)
+        # МЕТРИКИ
+        m_cols = st.columns(3)
+        m_cols[0].metric("🔥 Асф.", f"{stats['road']['t']:.0f}°C")
+        m_cols[1].metric("🏠 Здан.", f"{stats['build']['t']:.0f}°C")
+        m_cols[2].metric("🌳 Эко", f"{stats['eco']['p']:.0f}%")
+
+        # СИМУЛЯТОР С ГРАДУСНИКОМ
+        st.markdown("---")
+        st.subheader("🧪 Симулятор")
+        
+        trees = st.slider("🌳 Деревья (%)", 0, 100, 0)
+        water = st.slider("⛲ Вода/Фасады (%)", 0, 100, 0)
+
+        reduction = (trees * 0.1) + (water * 0.08)
+        res_t = stats['avg_t'] - reduction
+
+        sim_res_col1, sim_res_col2 = st.columns([1, 3])
+        with sim_res_col1:
+            fill = min(100, max(10, (res_t / 60) * 100))
+            color = "#ff4b4b" if res_t > stats['danger_limit'] else "#00ff88"
+            st.markdown(f'<div class="thermo-container"><div class="thermo-fill" style="height:{fill}%; background:{color};"></div></div>', unsafe_allow_html=True)
+            st.write(f"**{res_t:.1f}°C**")
+        with sim_res_col2:
+            st.write(f"**Эффект:** -{reduction:.1f}°C")
+            st.progress(min(1.0, reduction/15))
+            if res_t <= stats['danger_limit']: st.success("Охлаждение успешно!")
+
+        # ОТЧЕТ
+        st.markdown("### 📝 Отчет")
+        report_df = pd.DataFrame({
+            "Параметр": ["База", "Итог", "Площадь %"],
+            "Данные": [f"{stats['avg_t']:.1f}°C", f"{res_t:.1f}°C", f"{stats['eco']['p']:.1f}%"]
+        })
+        st.table(report_df)
+        st.download_button("📥 Сохранить CSV", data=report_df.to_csv(index=False).encode('utf-8-sig'), file_name='urban.csv')
