@@ -94,4 +94,63 @@ cfg_cols = st.columns(2)
 with cfg_cols[0]:
     climate = st.selectbox("Климатическая зона", ["Умеренный", "Тропики", "Пустыня", "Арктика / Зима"])
 with cfg_cols[1]:
-    t_air = st.number_input("T воздуха на улице (°C)",
+    t_air = st.number_input("T воздуха на улице (°C)", value=25)
+
+uploaded_file = st.file_uploader("📥 Загрузить карту", type=['jpg', 'png', 'jpeg'])
+
+if uploaded_file:
+    img_raw = auto_enhance_image(Image.open(uploaded_file))
+    st.subheader("🎯 Зона анализа")
+    cropped_img = st_cropper(img_raw, realtime_update=True, box_color='#00ff88', aspect_ratio=None)
+    
+    if cropped_img:
+        processed_img, stats = process_thermal(cropped_img, t_air, climate)
+        
+        # Статус перегрева
+        if stats['avg_t'] > stats['danger_limit']:
+            st.markdown(f'<div class="danger-alert">⚠️ ТЕПЛОВОЙ ОСТРОВ: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="safe-alert">✅ КОМФОРТНАЯ ЗОНА: {stats["avg_t"]:.1f}°C</div>', unsafe_allow_html=True)
+
+        # Сравнение фото
+        st.write("")
+        img_col1, img_col2 = st.columns(2)
+        with img_col1: st.image(cropped_img, caption="Оригинал", use_container_width=True)
+        with img_col2: st.image(processed_img, caption="Тепловизор ИИ", use_container_width=True)
+
+        # --- НОВЫЙ РАЗДЕЛ СОВЕТОВ ---
+        st.divider()
+        st.subheader("🧪 ПЕРСОНАЛЬНЫЙ ПЛАН МОДЕРНИЗАЦИИ")
+        
+        # Логика адресных советов
+        if stats['road']['p'] > 45:
+            advice = "🚨 **В этой зоне слишком много асфальта!** Он поглощает до 90% тепла. Рекомендуется заменить его на светлую перфорированную плитку или организовать тенты над дорожками."
+        elif stats['build']['p'] > 55:
+            advice = "🏢 **Доминирует плотная застройка.** Здания создают 'тепловой коридор'. Рекомендуется покраска крыш в белый цвет и установка вертикальных садов на фасадах."
+        elif stats['eco']['p'] > 60:
+            advice = "🌳 **Здесь много зелени — это отлично!** Чтобы сделать место еще прохладнее, добавьте открытый источник воды или систему туманообразования."
+        else:
+            advice = "📍 **Смешанный ландшафт.** Лучшее решение — высадка 3-4 крупных деревьев с раскидистой кроной для создания островков тени."
+
+        st.info(advice)
+
+        # Симулятор
+        trees = st.slider("🌳 Процент дополнительного озеленения", 0, 100, 0)
+        reduction = (trees * 0.12)
+        res_t = stats['avg_t'] - reduction
+
+        # Градусник и Отчет
+        res_col1, res_col2 = st.columns([1, 3])
+        with res_col1:
+            fill = min(100, max(10, (res_t / 60) * 100))
+            color = "#ff4b4b" if res_t > stats['danger_limit'] else "#00ff88"
+            st.markdown(f'<div class="thermo-container"><div class="thermo-fill" style="height:{fill}%; background:{color};"></div></div>', unsafe_allow_html=True)
+            st.write(f"**{res_t:.1f}°C**")
+        with res_col2:
+            st.write(f"**Эффективность модернизации:** -{reduction:.1f}°C")
+            report_df = pd.DataFrame({
+                "Параметр": ["Текущая T", "Прогноз T", "Доля эко-зоны"],
+                "Значение": [f"{stats['avg_t']:.1f}°C", f"{res_t:.1f}°C", f"{stats['eco']['p']:.1f}%"]
+            })
+            st.table(report_df)
+            st.download_button("📥 Скачать CSV", data=report_df.to_csv(index=False).encode('utf-8-sig'), file_name='urban_report.csv')
