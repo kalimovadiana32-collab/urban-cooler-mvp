@@ -48,3 +48,15 @@ def process_thermal(img, ambient_temp, climate_type):
         "eco": {"p": p_cool*100, "t": ambient_temp+conf["cool"]},
         "avg_t": avg_t, "danger_limit": conf["danger"]
     }
+def get_space_ai_advice(stats, current_temp):
+    """Имитация работы API Space AI Ассистента"""
+    if current_temp > stats['danger_limit']:
+        advice = (
+            f"Анализ ДЗЗ выявил критический перегрев. При текущей T={current_temp:.1f}°C "
+            f"индекс альбедо дорог ({stats['road']['p']:.1f}%) критически мал. "
+            "Рекомендую немедленное внедрение 'холодных крыш' и увеличение фитомассы."
+        )
+    else:
+        advice = "Термический фон в норме. Спутниковый мониторинг подтверждает эффективность текущего озеленения."
+    
+    return advice
