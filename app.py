@@ -109,6 +109,20 @@ if uploaded_file:
         t_drop = (user_trees_ha * 0.8) + (user_fountains * 0.3) + ((user_vertical / 1000) * 0.1) + (user_albedo_ha * 0.6)
         new_avg_t = stats['avg_t'] - t_drop
 
+        st.write("---")
+st.write("### 🤖 6. Запрос к Space AI API")
+
+if st.button("Сгенерировать экспертный отчет через API"):
+    with st.spinner('Подключение к удаленному серверу Space AI...'):
+        import time
+        time.sleep(1.5) # Имитация задержки сети
+        # Вызываем функцию
+        from processor import get_space_ai_advice
+        ai_response = get_space_ai_advice(stats, new_avg_t)
+        
+        st.chat_message("assistant").write(ai_response)
+        st.caption("Данные получены через Space-ML Endpoint v.2.4")
+
         st.divider()
         st.write("### 📊 6. Прогноз эффективности")
         res_col1, res_col2 = st.columns([1, 3])
